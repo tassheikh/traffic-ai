@@ -3,10 +3,10 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar  from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 
-import Home       from "./pages/Home";
-import Dashboard  from "./pages/Dashboard";
-import Prediction from "./pages/Prediction";
-import MapView    from "./pages/MapView";
+import Home from "./Pages/Home";
+import Dashboard from "./Pages/Dashboard";
+import Prediction from "./Pages/Prediction";
+import MapView from "./Pages/MapView";
 
 // Home page pe sidebar/navbar nahi dikhana — clean hero look
 const HIDE_CHROME = ["/"];
