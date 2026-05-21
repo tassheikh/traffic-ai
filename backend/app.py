@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import os
 import joblib
 import pandas as pd
 import numpy as np
@@ -11,7 +12,9 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 CORS(app, origins="*")
 
+# =========================
 # SOCKETIO INIT
+# =========================
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -29,7 +32,10 @@ print("✅ Model loaded successfully")
 # =========================
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Traffic Prediction API is running 🚦", "status": "ok"})
+    return jsonify({
+        "message": "Traffic Prediction API is running 🚦",
+        "status": "ok"
+    })
 
 # =========================
 # PREDICT ROUTE
@@ -40,46 +46,70 @@ def predict():
         data = request.get_json(force=True)
 
         if not data:
-            return jsonify({"success": False, "error": "No data received"}), 400
+            return jsonify({
+                "success": False,
+                "error": "No data received"
+            }), 400
 
-        # ── Required fields check ──
-        required = ["temp", "rain_1h", "snow_1h", "clouds_all",
-                    "weather_main", "weather_description",
-                    "hour", "day", "month", "weekday", "vehicles"]
+        # =========================
+        # REQUIRED FIELDS
+        # =========================
+        required = [
+            "temp",
+            "rain_1h",
+            "snow_1h",
+            "clouds_all",
+            "weather_main",
+            "weather_description",
+            "hour",
+            "day",
+            "month",
+            "weekday",
+            "vehicles"
+        ]
 
-        missing = [f for f in required if f not in data]
+        missing = [field for field in required if field not in data]
+
         if missing:
             return jsonify({
                 "success": False,
                 "error": f"Missing fields: {missing}"
             }), 400
 
-        # ── Build DataFrame ──
+        # =========================
+        # BUILD DATAFRAME
+        # =========================
         input_data = {
-            "temp":                float(data["temp"]),
-            "rain_1h":             float(data["rain_1h"]),
-            "snow_1h":             float(data["snow_1h"]),
-            "clouds_all":          float(data["clouds_all"]),
-            "weather_main":        str(data["weather_main"]),
+            "temp": float(data["temp"]),
+            "rain_1h": float(data["rain_1h"]),
+            "snow_1h": float(data["snow_1h"]),
+            "clouds_all": float(data["clouds_all"]),
+            "weather_main": str(data["weather_main"]),
             "weather_description": str(data["weather_description"]),
-            "hour":                int(data["hour"]),
-            "day":                 int(data["day"]),
-            "month":               int(data["month"]),
-            "weekday":             int(data["weekday"]),
-            "vehicles":            int(data["vehicles"]),
+            "hour": int(data["hour"]),
+            "day": int(data["day"]),
+            "month": int(data["month"]),
+            "weekday": int(data["weekday"]),
+            "vehicles": int(data["vehicles"]),
         }
 
         df = pd.DataFrame([input_data])
-        print("📊 Input DataFrame:\n", df)
 
-        # ── Predict ──
+        print("📊 Input DataFrame:")
+        print(df)
+
+        # =========================
+        # PREDICTION
+        # =========================
         prediction_raw = model.predict(df)
 
-        # ── Safely convert numpy → Python int ──
         result = int(round(float(prediction_raw[0])))
+
         print(f"🚦 Prediction: {result}")
 
-        # ── Congestion label ──
+        # =========================
+        # CONGESTION LEVEL
+        # =========================
         if result > 800:
             congestion = "High"
         elif result > 500:
@@ -87,14 +117,22 @@ def predict():
         else:
             congestion = "Low"
 
-        # ── Emit to all connected sockets ──
-        socketio.emit("new_prediction", {
-            "prediction": result,
-            "congestion": congestion
-        })
+        # =========================
+        # SOCKET EMIT
+        # =========================
+        socketio.emit(
+            "new_prediction",
+            {
+                "prediction": result,
+                "congestion": congestion
+            }
+        )
 
+        # =========================
+        # RESPONSE
+        # =========================
         return jsonify({
-            "success":    True,
+            "success": True,
             "prediction": result,
             "congestion": congestion
         })
@@ -102,9 +140,10 @@ def predict():
     except Exception as e:
         import traceback
         traceback.print_exc()
+
         return jsonify({
             "success": False,
-            "error":   str(e)
+            "error": str(e)
         }), 500
 
 # =========================
@@ -113,14 +152,30 @@ def predict():
 @socketio.on("connect")
 def handle_connect():
     print("🔌 Client Connected:", request.sid)
-    emit("connected", {"message": "Connected to TrafficAI server"})
+
+    emit(
+        "connected",
+        {
+            "message": "Connected to TrafficAI server"
+        }
+    )
 
 @socketio.on("disconnect")
 def handle_disconnect():
     print("❌ Client Disconnected:", request.sid)
 
 # =========================
-# RUN
+# RUN SERVER
 # =========================
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+
+    # Render dynamic port support
+    port = int(os.environ.get("PORT", 5000))
+
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        allow_unsafe_werkzeug=True
+    )
