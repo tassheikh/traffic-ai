@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Traffic Dashboard 🚦</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>🚦 AI Smart Traffic Dashboard</h1>
+
+    <div class="card">
+        <h2>Enter Traffic Details</h2>
+
+        <form id="form">
+            <label>Day:</label>
+            <select id="day">
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+            </select>
+
+            <label>Time:</label>
+            <input type="number" id="time" placeholder="0-23">
+
+            <label>Vehicles:</label>
+            <input type="number" id="vehicles">
+
+            <label>Weather:</label>
+            <select id="weather">
+                <option value="0">Clear</option>
+                <option value="1">Cloudy</option>
+                <option value="2">Rain</option>
+            </select>
+
+            <button type="submit">Predict 🚀</button>
+        </form>
+    </div>
+
+    <div class="card result-card">
+        <h2>Prediction Result</h2>
+
+        <p id="loading" style="display:none;">⏳ Predicting...</p>
+        <p id="result">Waiting for input...</p>
+
+        <h3>📊 Analytics Dashboard</h3>
+        <div class="graphs">
+            <img id="g1">
+            <img id="g2">
+            <img id="g3">
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("form").onsubmit = async function(e) {
+    e.preventDefault();
+
+    document.getElementById("loading").style.display = "block";
+
+    const data = {
+        day: parseInt(day.value),
+        time: parseInt(time.value),
+        vehicles: parseInt(vehicles.value),
+        weather: parseInt(weather.value)
+    };
+
+    // Prediction
+    const res = await fetch("/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    let output = "";
+
+    if(result.prediction == 0)
+        output = "🟢 Low Traffic - Smooth roads.";
+    else if(result.prediction == 1)
+        output = "🟡 Medium Traffic - Moderate congestion.";
+    else
+        output = "🔴 High Traffic expected due to peak hours and heavy vehicle density.";
+
+    document.getElementById("result").innerText = output;
+    document.getElementById("loading").style.display = "none";
+
+    // Graphs
+    const gRes = await fetch("/graphs");
+    const gData = await gRes.json();
+
+    document.getElementById("g1").src = "data:image/png;base64," + gData.g1;
+    document.getElementById("g2").src = "data:image/png;base64," + gData.g2;
+    document.getElementById("g3").src = "data:image/png;base64," + gData.g3;
+};
+</script>
+
+</body>
+</html>

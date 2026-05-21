@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for Glassmorphism and Dashboard */
+body {
+  @apply bg-gradient-to-r from-[#141e30] to-[#243b55] text-white font-sans;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  @apply w-4/5 mx-auto text-center;
+}
+
+.card {
+  @apply bg-white/10 backdrop-blur-md text-white p-6 my-5 rounded-2xl shadow-lg w-1/2 mx-auto;
+}
+
+input, select {
+  @apply w-11/12 p-3 m-2 rounded-md text-black;
+}
+
+button {
+  @apply px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition;
+}
+
+.graphs {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-5 mt-5;
+}
+
+.graphs img {
+  @apply w-full rounded-xl shadow-md;
+}
+
+h1 {
+  @apply text-4xl font-bold my-5;
+}
